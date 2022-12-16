@@ -2,7 +2,7 @@ import json
 import aiohttpx
 import backoff
 
-from lazyops.types import BaseModel, lazyproperty
+from lazyops.types import BaseModel, lazyproperty, Field
 from lazyops.utils import ObjectEncoder
 from lazyops.types.formatting import to_camel_case
 from aiologto.utils.logs import logger
@@ -280,7 +280,7 @@ class BaseRoute(BaseModel):
             **kwargs
         )
         data = self.handle_response(api_response)
-        return data is not None
+        return data is None
     
     async def async_delete(
         self, 
@@ -306,7 +306,7 @@ class BaseRoute(BaseModel):
             **kwargs
         )
         data = self.handle_response(api_response)
-        return data is not None
+        return data is None
 
     def create(
         self, 

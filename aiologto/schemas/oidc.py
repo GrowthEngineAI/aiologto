@@ -38,10 +38,10 @@ class OidcAuthorization(BaseResource):
     @property
     def is_expired(self):
         """
-        Checks whether the token has expired
+        Checks whether the token has expired with a 90.0s buffer
         """
         return self.expires_in is not None \
-            and (self.issued_at + self.expires_in) < time.time()
+            and time.time()> (self.issued_at + self.expires_in + 90.0)
 
 
 class OidcRoute(BaseRoute):

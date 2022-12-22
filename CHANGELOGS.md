@@ -1,7 +1,10 @@
 ## aiologto Changelogs
 
+- 0.0.3 (2022-12-21)
+  - Resolve some issues with serialization of `custom_data`
+
 - 0.0.2 (2022-12-16)
-    - Minor Hotfix
+  - Minor Hotfix
 
 - 0.0.1 (2022-12-16)
-    - Initial release.
+  - Initial release.

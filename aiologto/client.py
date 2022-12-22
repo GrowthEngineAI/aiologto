@@ -247,7 +247,7 @@ class LogtoAPI:
         **kwargs
     ):
         """
-        Configure the global OpenAI client.
+        Configure the global Logto client.
 
         :param url: The URL of the API.
         :param scheme: The scheme of the API.
@@ -308,7 +308,7 @@ class LogtoAPI:
     @property
     def api(self) -> LogtoClient:
         """
-        Returns the inherited OpenAI client.
+        Returns the inherited Logto client.
         """
         if self._api is None:
             self.configure()

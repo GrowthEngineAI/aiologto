@@ -3,7 +3,7 @@ import aiohttpx
 import backoff
 
 from lazyops.types import BaseModel, lazyproperty, Field
-from lazyops.utils import ObjectEncoder
+from lazyops.utils import ObjectEncoder, Json
 from lazyops.types.formatting import to_camel_case
 from aiologto.utils.logs import logger
 
@@ -49,6 +49,7 @@ class BaseResource(BaseModel):
         extra = 'allow'
         arbitrary_types_allowed = True
         alias_generator = to_camel_case
+        json_dumps = Json.dumps
 
     @lazyproperty
     def resource_id(self):
@@ -69,7 +70,7 @@ class BaseResource(BaseModel):
         resource_kwargs = {k: v for k, v in kwargs.items() if k in resource_fields}
         return_kwargs = {k: v for k, v in kwargs.items() if k not in resource_fields and k in VALID_SEND_KWARGS}
         resource_obj = resource.parse_obj(resource_kwargs)
-        logger.info(f'Created Resource: {resource_obj} | {return_kwargs}')
+        if logto_settings.debug_enabled: logger.info(f'Created Resource: {resource_obj} | {return_kwargs}')
         return resource_obj, return_kwargs
     
     def update_dict(

@@ -1,6 +1,6 @@
 import datetime
-from typing import Optional, Type, List, Dict, Any
-from aiologto.types.base import BaseRoute, BaseResource, lazyproperty
+from typing import Optional, Type, List, Dict, Any, Union
+from aiologto.types.base import BaseRoute, BaseResource, lazyproperty, Json
 
 __all__ = [
     'User',
@@ -251,7 +251,7 @@ class UserRoute(BaseRoute):
     def update_user_data(
         self, 
         user_id: str,
-        user_data: Dict,
+        user_data: Union[Dict, Type[BaseResource]],
         headers: Optional[Dict] = None,
         **kwargs
     ):
@@ -264,10 +264,12 @@ class UserRoute(BaseRoute):
         
         headers = self.get_headers(headers = headers, **kwargs)
         api_resource = f'{self.api_resource}/{user_id}/custom-data'
+        if not isinstance(user_data, dict):
+            user_data = user_data.dict()
         api_response = self._send(
             method = 'PATCH',
             url = api_resource,
-            data = user_data,
+            json = user_data,
             headers = headers,
             timeout = self.timeout,
             **kwargs
@@ -278,7 +280,7 @@ class UserRoute(BaseRoute):
     async def async_update_user_data(
         self, 
         user_id: str,
-        user_data: Dict,
+        user_data: Union[Dict, Type[BaseResource]],
         headers: Optional[Dict] = None,
         **kwargs
     ):
@@ -290,10 +292,13 @@ class UserRoute(BaseRoute):
         """
         headers = await self.async_get_headers(headers = headers, **kwargs)
         api_resource = f'{self.api_resource}/{user_id}/custom-data'
+        if not isinstance(user_data, dict):
+            user_data = user_data.dict()
+
         api_response = await self._async_send(
             method = 'PATCH',
             url = api_resource,
-            data = user_data,
+            json = user_data,
             headers = headers,
             timeout = self.timeout,
             **kwargs
@@ -406,3 +411,39 @@ class UserRoute(BaseRoute):
         )
         data = self.handle_response(api_response)
         return self.prepare_response(data.json())
+    
+    def exists(
+        self,
+        user_id: str,
+        **kwargs
+    ) -> bool:
+        """
+        See whether a User Exists
+
+        :param user_id: The ID of the User to Validate
+        """
+        if 'exists' not in self.methods_enabled:
+            raise NotImplementedError(f'EXISTS is not allowed for {self.api_resource}')
+
+        try:
+            return self.get(user_id = user_id, **kwargs)
+        except Exception:
+            return False
+    
+    async def async_exists(
+        self,
+        user_id: str,
+        **kwargs
+    ) -> bool:
+        """
+        See whether a User Exists
+
+        :param user_id: The ID of the User to Validate
+        """
+        if 'exists' not in self.methods_enabled:
+            raise NotImplementedError(f'EXISTS is not allowed for {self.api_resource}')
+
+        try:
+            return await self.async_get(user_id = user_id, **kwargs)
+        except Exception:
+            return False

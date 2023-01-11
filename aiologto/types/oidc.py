@@ -23,8 +23,8 @@ class TokenResponse(BaseModel):
     def user_id(self):
         return self.sub
 
-class Jwks(BaseModel):
 
+class Jwks(BaseModel):
     key: Optional[Union[Dict, str]]
     algorithms: Optional[str]
     audience: Optional[str]
@@ -34,26 +34,13 @@ class Jwks(BaseModel):
     def decode_token(
         self,
         token: str,
-        key: Optional[Union[Dict, str]] = None,
-        algorithms: Optional[str] = None,
-        audience: Optional[str] = None,
-        issuer: Optional[str] = None,
-        options: Optional[Dict] = None,
-        **kwargs
     ) -> TokenResponse:
-
-        key = key if key is not None else self.key
-        algorithms = algorithms if algorithms is not None else self.algorithms
-        audience = audience if audience is not None else self.audience
-        issuer = issuer if issuer is not None else self.issuer
-        options = options if options is not None else self.options.copy()
         payload = jwt.decode(
             token,
-            key = key,
-            algorithms = algorithms,
-            audience = audience,
-            issuer = issuer,
-            options = options,
-            **kwargs
+            key=self.key,
+            algorithms=self.algorithms,
+            audience=self.audience,
+            issuer=self.issuer,
+            options=self.options,
         )
         return TokenResponse.parse_obj(payload)

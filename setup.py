@@ -15,6 +15,7 @@ requirements = [
     'aiohttpx',
     'backoff',
     'python-jose',
+    'aiokeydb'
 ]
 
 if sys.version_info.minor < 8:

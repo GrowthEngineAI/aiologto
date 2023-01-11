@@ -1,10 +1,14 @@
 import time
 import aiohttpx
 from typing import Optional, Type, Dict, Union
+from aiokeydb import KeyDBClient
+from jose.exceptions import JWTError
+
 from aiologto.types.base import BaseRoute, Field, BaseResource, lazyproperty
 from aiologto.types.oidc import Jwks, TokenResponse
 from aiologto.utils.config import LogtoSettings
 from aiologto.utils.logs import logger
+from aiologto.utils.caching import NO_CACHE, cache_invalidator
 
 __all__ = [
     'Token',
@@ -59,18 +63,17 @@ class OidcRoute(BaseRoute):
     @lazyproperty
     def methods_enabled(self):
         return []
-    
+
+    @KeyDBClient.cachify(cache_ttl=3600*24, _no_cache=NO_CACHE, _cache_invalidator=cache_invalidator)
     def get_jwks(self, **kwargs) -> Union[Dict, str]:
         """
         Fetches the JWT from the OIDC serer
         """
-        api_response = self._send(
-            "GET",
-            url = f"{self.api_resource}/jwks"
-        )
+        api_response = self._send("GET", url=f"{self.api_resource}/jwks")
         data = self.handle_response(api_response)
         return data.json()
 
+    @KeyDBClient.cachify(cache_ttl=3600*24, _no_cache=NO_CACHE, _cache_invalidator=cache_invalidator)
     async def async_get_jwks(self, **kwargs) -> Union[Dict, str]:
         """
         Fetches the JWT from the OIDC serer
@@ -100,31 +103,25 @@ class OidcRoute(BaseRoute):
             key = key if key is not None else self.get_jwks()
             algorithms = algorithms if algorithms is not None else self.settings.jwt_algorithms
             audience = audience if audience is not None else self.settings.resource
-            issuer = self.settings.get_jwt_issuer(issuer = issuer)
+            issuer = self.settings.get_jwt_issuer(issuer=issuer)
             options = options if options is not None else self.settings.jwt_options
 
             self.jwks = Jwks(
-                key = key,
-                algorithms = algorithms,
-                audience = audience,
-                issuer = issuer,
-                options = options,
+                key=key,
+                algorithms=algorithms,
+                audience=audience,
+                issuer=issuer,
+                options=options,
             )
             # Configure the settings
             # so that it's accessible by other APIs
-            self.settings.configure(
-                jwks = self.jwks
-            )
-        
-        return self.jwks.decode_token(
-            token,
-            key = key,
-            algorithms = algorithms,
-            audience = audience,
-            issuer = issuer,
-            options = options,
-            **kwargs
-        )
+            self.settings.configure(jwks=self.jwks)
+
+        try:
+            return self.jwks.decode_token(token)
+        except JWTError:
+            self.jwks.key = self.get_jwks(invalidate_local_cache=True)
+            return self.jwks.decode_token(token)
 
     async def async_decode_token(
         self,
@@ -144,30 +141,24 @@ class OidcRoute(BaseRoute):
             key = key if key is not None else await self.async_get_jwks()
             algorithms = algorithms if algorithms is not None else self.settings.jwt_algorithms
             audience = audience if audience is not None else self.settings.resource
-            issuer = self.settings.get_jwt_issuer(issuer = issuer)
+            issuer = self.settings.get_jwt_issuer(issuer=issuer)
             options = options if options is not None else self.settings.jwt_options
             self.jwks = Jwks(
-                key = key,
-                algorithms = algorithms,
-                audience = audience,
-                issuer = issuer,
-                options = options,
+                key=key,
+                algorithms=algorithms,
+                audience=audience,
+                issuer=issuer,
+                options=options,
             )
             # Configure the settings
             # so that it's accessible by other APIs
-            self.settings.configure(
-                jwks = self.jwks
-            )
-        
-        return self.jwks.decode_token(
-            token,
-            key = key,
-            algorithms = algorithms,
-            audience = audience,
-            issuer = issuer,
-            options = options,
-            **kwargs
-        )
+            self.settings.configure(jwks=self.jwks)
+
+        try:
+            return self.jwks.decode_token(token)
+        except JWTError:
+            self.jwks.key = await self.async_get_jwks(invalidate_local_cache=True)
+            return self.jwks.decode_token(token)
     
     def get_headers(
         self,

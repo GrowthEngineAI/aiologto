@@ -2,7 +2,7 @@ import time
 import aiohttpx
 from typing import Optional, Type, Dict, Union
 from aiokeydb import KeyDBClient
-from jose.exceptions import JWTError, ExpiredSignatureError
+from jose.exceptions import JWTError
 
 from aiologto.types.base import BaseRoute, Field, BaseResource, lazyproperty
 from aiologto.types.oidc import Jwks, TokenResponse
@@ -119,7 +119,7 @@ class OidcRoute(BaseRoute):
 
         try:
             return self.jwks.decode_token(token)
-        except (JWTError, ExpiredSignatureError):
+        except JWTError:
             self.jwks.key = self.get_jwks(invalidate_local_cache=True)
             return self.jwks.decode_token(token)
 
@@ -156,7 +156,7 @@ class OidcRoute(BaseRoute):
 
         try:
             return self.jwks.decode_token(token)
-        except (JWTError, ExpiredSignatureError):
+        except JWTError:
             self.jwks.key = await self.async_get_jwks(invalidate_local_cache=True)
             return self.jwks.decode_token(token)
     
